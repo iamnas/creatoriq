@@ -1,6 +1,14 @@
 
 import express from 'express';
 import cors from 'cors';
+import userRouter from './users/user.router';
+import dotenv from 'dotenv';
+import ideaRouter from './idea/idea.routes';
+import { authenticate } from './auth/auth.middleware';
+import analyticsRouter from './analytics/analytics.routes';
+
+dotenv.config();
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,6 +23,11 @@ app.get('/', (req, res) => {
         message: 'Hello from CreatorIQ'
     })
 })
+
+app.use('/api/v1/user', userRouter);
+app.use('/api/v1/idea',authenticate, ideaRouter);
+app.use('/api/v1/analytics',authenticate, analyticsRouter);
+
 
 
 app.listen(PORT,()=>{
