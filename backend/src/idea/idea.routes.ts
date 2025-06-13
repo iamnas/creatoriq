@@ -16,11 +16,37 @@ ideaRouter.post('/generate-idea', async (req: any, res) => {
 
 
 
-    const openai = getOpenAI();
+    try {
+        const idea = await prisma.idea.create({
+            data: {
+                userId: req.user.userId,
+                topic,
+                niche,
+                reelIdea: '',
+                caption: '',
+                hook: '',
+                hashtags: [],
+                isFetched: false,
+                isFailed: false
+            }
+        });
+
+        res.json({
+            data: {
+                id: idea.id,
+                isFetched: false,
+                isFailed: false,
+                idea: {}
+            }
+        });
+
+        // Generate idea in background
+        (async () => {
+            const openai = getOpenAI();
 
 
 
-    const prompt = `You are a content strategist. Suggest one trending Instagram reel 
+            const prompt = `You are a content strategist. Suggest one trending Instagram reel 
                     idea for a creator in the ${niche} niche based on the topic "${topic}".
                 Please respond in **JSON format** with the following fields:
                 {
@@ -29,39 +55,47 @@ ideaRouter.post('/generate-idea', async (req: any, res) => {
                 "caption": "Instagram caption text",
                 "hashtags": ["#tag1", "#tag2", "#tag3", "#tag4", "#tag5"]
                 }`;
-    try {
-        const completion = await openai.chat.completions.create({
-            messages: [{ role: 'user', content: prompt }],
-            model: process.env.OPENAI_MODEL || 'gpt-4',
-            response_format: { type: 'json_object' },
-        });
+            try {
 
-        const content = completion.choices[0].message.content;
-
+                const completion = await openai.chat.completions.create({
+                    messages: [{ role: 'user', content: prompt }],
+                    model: process.env.OPENAI_MODEL || 'gpt-4',
+                    response_format: { type: 'json_object' },
+                });
 
 
-        if (!content) {
-            res.status(400).json({ message: 'Failed to generate content idea' });
-            return;
-        }
+                const content = completion.choices[0].message.content;
 
+                if (!content) {
+                    res.status(400).json({ message: 'Failed to generate content idea' });
+                    return;
+                }
 
-        const ideaJson = JSON.parse(content); // this will now work
-        const { reelIdea, hook, caption, hashtags } = ideaJson;
+                const { reelIdea, caption, hook, hashtags } = JSON.parse(content);
 
-        const idea = await prisma.idea.create({
-            data: {
-                userId: req.user.userId,
-                topic,
-                niche,
-                reelIdea,
-                caption,
-                hashtags,
-                hook,
-            },
-        });
+                await prisma.idea.update({
+                    where: { id: idea.id },
+                    data: {
+                        reelIdea,
+                        caption,
+                        hook,
+                        hashtags,
+                        isFetched: true,
+                        isFailed: false
+                    }
+                });
+            } catch (err) {
+                console.error('OpenAI generation failed:', err);
+                await prisma.idea.update({
+                    where: { id: idea.id },
+                    data: {
+                        isFetched: true,
+                        isFailed: true
+                    }
+                });
+            }
+        })();
 
-        res.json({ data: idea });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Failed to generate content idea' });
