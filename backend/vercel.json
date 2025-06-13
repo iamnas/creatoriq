@@ -1,9 +1,0 @@
-{
-  "projects": {
-    "backend": {
-      "framework": "node",
-      "buildCommand": "pnpm build",
-      "outputDirectory": "dist"
-    }
-  }
-}
