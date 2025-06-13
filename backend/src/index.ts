@@ -15,7 +15,12 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-app.use(cors());
+app.use(cors(
+    {
+        origin: 'http://localhost:5173', 
+        credentials: true,
+    }
+));
 
 app.get('/', (req, res) => {
 
@@ -25,12 +30,12 @@ app.get('/', (req, res) => {
 })
 
 app.use('/api/v1/user', userRouter);
-app.use('/api/v1/idea',authenticate, ideaRouter);
-app.use('/api/v1/analytics',authenticate, analyticsRouter);
+app.use('/api/v1/idea', authenticate, ideaRouter);
+app.use('/api/v1/analytics', authenticate, analyticsRouter);
 
 
 
-app.listen(PORT,()=>{
+app.listen(PORT, () => {
     console.log(`Server is running http://localhost:${PORT}`);
 })
 
