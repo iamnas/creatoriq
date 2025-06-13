@@ -102,23 +102,31 @@ ideaRouter.post('/generate-idea', async (req: any, res) => {
     }
 });
 
-// Get idea by ID
-ideaRouter.get('/:id', authenticate, async (req: any, res) => {
-    try {
-        const idea = await prisma.idea.findUnique({
-            where: { id: req.params.id, userId: req.user.userId }
-        });
 
-        if (!idea) { res.status(404).json({ message: 'Idea not found' }); return; }
-        res.json({ data: idea });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Failed to fetch idea' });
-    }
-});
 
-ideaRouter.get('/', async (req: any, res) => {
+// GET /api/v1/idea?id=some-id => fetch single idea
+// GET /api/v1/idea => fetch all ideas
+
+ideaRouter.get('/', authenticate, async (req: any, res) => {
     try {
+        const { id } = req.query;
+
+        if (id) {
+            const idea = await prisma.idea.findFirst({
+                where: {
+                    id: String(id),
+                    userId: req.user.userId
+                }
+            });
+
+            if (!idea) {
+                res.status(404).json({ message: 'Idea not found' }); return;
+            }
+
+            res.json({ data: idea });
+            return;
+        }
+
         const ideas = await prisma.idea.findMany({
             where: { userId: req.user.userId },
             orderBy: { createdAt: 'desc' },
@@ -127,11 +135,41 @@ ideaRouter.get('/', async (req: any, res) => {
         res.json({ data: ideas });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: 'Failed to fetch content ideas' });
+        res.status(500).json({ message: 'Failed to fetch idea(s)' });
     }
 });
 
 
+
+
+
+// ideaRouter.get('/:id', authenticate, async (req: any, res) => {
+//     try {
+//         const idea = await prisma.idea.findUnique({
+//             where: { id: req.params.id, userId: req.user.userId }
+//         });
+
+//         if (!idea) { res.status(404).json({ message: 'Idea not found' }); return; }
+//         res.json({ data: idea });
+//     } catch (err) {
+//         console.error(err);
+//         res.status(500).json({ message: 'Failed to fetch idea' });
+//     }
+// });
+
+// ideaRouter.get('/', async (req: any, res) => {
+//     try {
+//         const ideas = await prisma.idea.findMany({
+//             where: { userId: req.user.userId },
+//             orderBy: { createdAt: 'desc' },
+//         });
+
+//         res.json({ data: ideas });
+//     } catch (err) {
+//         console.error(err);
+//         res.status(500).json({ message: 'Failed to fetch content ideas' });
+//     }
+// });
 
 
 export default ideaRouter;
