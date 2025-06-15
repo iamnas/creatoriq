@@ -1,5 +1,3 @@
-
-
 import { type ReactNode } from "react";
 import { Routes, Route, Navigate, BrowserRouter, Link, useLocation } from "react-router";
 import { Sparkles, Lightbulb, BarChart3, Instagram, LogOut, Menu, X, LogIn, UserPlus } from "lucide-react";
@@ -12,8 +10,40 @@ import Ideas from "./pages/Ideas.tsx";
 import Analytics from "./pages/Analytics.tsx";
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
-  const { token } = useAuth();
-  return token ? children : <Navigate to="/login" />;
+  const { token, isLoading } = useAuth();
+  
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  return token ? children : <Navigate to="/login" replace />;
+}
+
+function PublicRoute({ children }: { children: ReactNode }) {
+  const { token, isLoading } = useAuth();
+  
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // If already authenticated, redirect to main app
+  return token ? <Navigate to="/generate" replace /> : children;
 }
 
 function Navigation() {
@@ -42,7 +72,7 @@ function Navigation() {
               ContentCraft
             </span>
           </Link>
-
+          
           {/* Authenticated User Navigation */}
           {token && (
             <>
@@ -54,10 +84,11 @@ function Navigation() {
                     <Link
                       key={item.path}
                       to={item.path}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-2 ${isActive(item.path)
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-2 ${
+                        isActive(item.path)
                           ? 'bg-purple-100 text-purple-700 shadow-sm'
                           : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                        }`}
+                      }`}
                     >
                       <Icon className="w-4 h-4" />
                       <span>{item.label}</span>
@@ -124,10 +155,11 @@ function Navigation() {
                         key={item.path}
                         to={item.path}
                         onClick={() => setMobileMenuOpen(false)}
-                        className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${isActive(item.path)
+                        className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                          isActive(item.path)
                             ? 'bg-purple-100 text-purple-700'
                             : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                          }`}
+                        }`}
                       >
                         <Icon className="w-5 h-5" />
                         <span>{item.label}</span>
@@ -180,25 +212,34 @@ function App() {
       <div className="min-h-screen bg-gray-50">
         <Routes>
           {/* Public Routes with Navigation */}
-          <Route
-            path="/login"
+          <Route 
+            path="/login" 
             element={
-              <>
+              <PublicRoute>
                 <Navigation />
                 <Login />
-              </>
-            }
+              </PublicRoute>
+            } 
           />
-          <Route
-            path="/register"
+          <Route 
+            path="/register" 
             element={
-              <>
+              <PublicRoute>
                 <Navigation />
                 <Register />
-              </>
-            }
+              </PublicRoute>
+            } 
           />
-          <Route path="/" element={<Navigate to="/generate" />} />
+          
+          {/* Root route - redirect based on auth state */}
+          <Route 
+            path="/" 
+            element={
+              <ProtectedRoute>
+                <Navigate to="/generate" replace />
+              </ProtectedRoute>
+            } 
+          />
 
           {/* Protected Routes with Navigation */}
           <Route
@@ -228,15 +269,15 @@ function App() {
               </ProtectedRoute>
             }
           />
-
+          
           {/* Catch all route - redirect to login if not authenticated */}
-          <Route
-            path="*"
+          <Route 
+            path="*" 
             element={
               <ProtectedRoute>
                 <Navigate to="/generate" replace />
               </ProtectedRoute>
-            }
+            } 
           />
         </Routes>
       </div>
