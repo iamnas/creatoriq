@@ -1,8 +1,7 @@
 # CreatorIQ 🚀
 
 AI-Powered Instagram Content Generator + Analytics Dashboard built with the **MERN Stack**.
-
-🔗 **Live URL:** [https://creatoriq.vercel.app](https://creatoriq.vercel.app)  
+ 
 📦 **GitHub Repo:** [https://github.com/iamnas/creatoriq](https://github.com/iamnas/creatoriq)
 
 ---
